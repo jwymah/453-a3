@@ -15,6 +15,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLShader>
 #include <QMouseEvent>
+#include <QTimer>
 
 using namespace std;
 
@@ -56,6 +57,11 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent * event);
 
 private:
+    GLuint m_uvAttr;
+    GLuint m_TextureUniform;
+    GLuint m_testTexture;
+    QTimer *m_rotationTimer;
+    float m_testRotation;
 
     // member variables for shader manipulation
     GLuint m_programID;
@@ -78,6 +84,8 @@ private:
 
     // helper function for drawing bordering triangles
     void generateExampleTriangle();
+private slots:
+    void rotate_n_update();
 
 };
 

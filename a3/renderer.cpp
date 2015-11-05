@@ -3,13 +3,56 @@
 #include <QOpenGLBuffer>
 #include <cmath>
 
+const float tet_verts[] = {
+    1,1,1, 1,2,1, 2,1,1,
+    1,1,1, 1,1,2, 1,2,1,
+    1,1,1, 2,1,1, 1,1,2,
+    2,1,1, 1,2,1, 1,1,2,
+};
+
+const float tet_normals[] = {
+    0,0,-1, 0,0,-1, 0,0,-1,
+    -1,0,0, -1,0,0, -1,0,0,
+    0,-1,0, 0,-1,0, 0,-1,0,
+    0.5773, 0.5773, 0.5773,
+    0.5773, 0.5773, 0.5773,
+    0.5773, 0.5773, 0.5773,
+};
+
+const float tet_uvs[] = {
+    1, 1,  1, 0,  0, 0,
+    1, 1,  1, 0,  0, 1,
+    1, 1,  0, 0,  1, 0,
+    1, 0,  0, 0,  1, 1,
+};
+
+const float tet_col[] = {
+    1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1,
+};
+
 // constructor
+//Renderer::Renderer(QWidget *parent)
+//    : QOpenGLWidget(parent)
+//{
+
+//}
 Renderer::Renderer(QWidget *parent)
     : QOpenGLWidget(parent)
 {
-
+    m_testRotation = 0;
+    m_rotationTimer = new QTimer(this);
+    connect(m_rotationTimer, SIGNAL(timeout()), this, SLOT(rotate_n_update()));
+    m_rotationTimer->start(33);
 }
-
+// and add
+void Renderer::rotate_n_update()
+{
+    m_testRotation += 1;
+    this->update();
+}
 // constructor
 Renderer::~Renderer()
 {
@@ -27,16 +70,51 @@ void Renderer::initializeGL()
 
     // links to and compiles the shaders, used for drawing simple objects
     m_program = new QOpenGLShaderProgram(this);
-    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "per-fragment-phong.vs.glsl");
-    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "per-fragment-phong.fs.glsl");
+//    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "per-fragment-phong.vs.glsl");
+//    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "per-fragment-phong.fs.glsl");
+    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "textured-phong.vs.glsl");
+    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "textured-phong.fs.glsl");
+
     m_program->link();
+//    m_posAttr = m_program->attributeLocation("position_attr");
+//    m_colAttr = m_program->attributeLocation("colour_attr");
+//    m_norAttr = m_program->attributeLocation("normal_attr");
+//    m_PMatrixUniform = m_program->uniformLocation("proj_matrix");
+//    m_VMatrixUniform = m_program->uniformLocation("view_matrix");
+//    m_MMatrixUniform = m_program->uniformLocation("model_matrix");
     m_posAttr = m_program->attributeLocation("position_attr");
     m_colAttr = m_program->attributeLocation("colour_attr");
     m_norAttr = m_program->attributeLocation("normal_attr");
+    m_uvAttr = m_program->attributeLocation("texcoords_attr");
     m_PMatrixUniform = m_program->uniformLocation("proj_matrix");
     m_VMatrixUniform = m_program->uniformLocation("view_matrix");
     m_MMatrixUniform = m_program->uniformLocation("model_matrix");
+    m_TextureUniform = m_program->uniformLocation("texObject");
+
     m_programID = m_program->programId();
+
+    // and add this
+    glGenTextures(1, &m_testTexture); // Generate a texture handle
+    glActiveTexture(GL_TEXTURE0); // Make sure we're using texture unit 0
+    glBindTexture(GL_TEXTURE_2D, m_testTexture); // bind the texture handle
+
+    QImage image; // Load the image
+    image.load("test.png");
+    image = image.convertToFormat(QImage::Format_RGBA8888); // Convert it to a usable format
+
+    // Write it to the GPU
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_RGBA,
+                 image.width(),
+                 image.height(),
+                 0,
+                 GL_RGBA,
+                 GL_UNSIGNED_INT_8_8_8_8_REV,
+                 (const GLvoid *)image.bits());
+    // Set the filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 }
 
@@ -50,6 +128,11 @@ void Renderer::paintGL()
     // Set the current shader program
 
     glUseProgram(m_programID);
+
+    // and add
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_testTexture);
+    glUniform1i(m_TextureUniform, 0); // Give it the 0'th texture unit
 
     // Modify the current projection matrix so that we move the
     // camera away from the origin.  We'll draw the model at the
@@ -66,7 +149,11 @@ void Renderer::paintGL()
 
     // Not implemented: scale, rotate and translate the scene
 
-    model_matrix.translate(0.0f, 0.0f, 0.0f);
+//    model_matrix.translate(0.0f, 0.0f, 0.0f);
+//    glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
+
+    model_matrix.rotate(m_testRotation, 0,1,0);
+    model_matrix.translate(-5./4., -5./4., -5./4.);
     glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
 
     // Not implemented: actually draw our character
@@ -77,21 +164,38 @@ void Renderer::paintGL()
     // example triangle
     if (triVertices.size() > 0)
     {
-        // pass in the list of vertices and their associated colours
-        // 3 coordinates per vertex, or per colour
-        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &triVertices[0]);
-        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &triColours[0]);
-        glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &triNormals[0]);
+//        // pass in the list of vertices and their associated colours
+//        // 3 coordinates per vertex, or per colour
+//        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &triVertices[0]);
+//        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &triColours[0]);
+//        glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &triNormals[0]);
+
+//        glEnableVertexAttribArray(m_posAttr);
+//        glEnableVertexAttribArray(m_colAttr);
+//        glEnableVertexAttribArray(m_norAttr);
+
+//        // draw triangles
+//        glDrawArrays(GL_TRIANGLES, 0, triVertices.size()/3); // 3 coordinates per vertex
+
+//        glDisableVertexAttribArray(m_norAttr);
+//        glDisableVertexAttribArray(m_colAttr);
+//        glDisableVertexAttribArray(m_posAttr);
+        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_verts[0]);
+        glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]);
+        glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
+        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]);
 
         glEnableVertexAttribArray(m_posAttr);
-        glEnableVertexAttribArray(m_colAttr);
         glEnableVertexAttribArray(m_norAttr);
+        glEnableVertexAttribArray(m_uvAttr);
+        glEnableVertexAttribArray(m_colAttr);
 
         // draw triangles
-        glDrawArrays(GL_TRIANGLES, 0, triVertices.size()/3); // 3 coordinates per vertex
+        glDrawArrays(GL_TRIANGLES, 0, 12);
 
-        glDisableVertexAttribArray(m_norAttr);
         glDisableVertexAttribArray(m_colAttr);
+        glDisableVertexAttribArray(m_uvAttr);
+        glDisableVertexAttribArray(m_norAttr);
         glDisableVertexAttribArray(m_posAttr);
     }
 

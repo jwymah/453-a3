@@ -34,7 +34,6 @@ public:
 
 private slots:
 
-
 private:
     // Main widget for drawing
     Renderer *renderer;
