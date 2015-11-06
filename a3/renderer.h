@@ -87,6 +87,9 @@ private:
 
     // object model
     ObjModel objModel;
+    vector<GLfloat> outVertices;
+    vector<GLfloat> outUvs;
+    vector<GLfloat> normals;
 
     // helper function for loading shaders
     GLuint loadShader(GLenum type, const char *source);

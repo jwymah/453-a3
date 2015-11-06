@@ -55,6 +55,44 @@ Renderer::Renderer(QWidget *parent)
         cout << "successfullly loaded" << endl;
     }
 
+    // Attempt to draw model
+    for (int i=0; i<objModel.num_tris; i++)
+    {
+        tri triAt = objModel.tris[i];
+
+        GLuint vertexIndex;
+        glm::vec3 vertex;
+
+        vertexIndex = triAt.index_xyz[0];
+        vertex = objModel.m_vertices[vertexIndex-1];
+        outVertices.push_back(vertex[0]);
+        outVertices.push_back(vertex[1]);
+        outVertices.push_back(vertex[2]);
+
+        vertexIndex = triAt.index_xyz[1];
+        vertex = objModel.m_vertices[vertexIndex-1];
+        outVertices.push_back(vertex[0]);
+        outVertices.push_back(vertex[1]);
+        outVertices.push_back(vertex[2]);
+
+        vertexIndex = triAt.index_xyz[2];
+        vertex = objModel.m_vertices[vertexIndex-1];
+        outVertices.push_back(vertex[0]);
+        outVertices.push_back(vertex[1]);
+        outVertices.push_back(vertex[2]);
+
+        GLuint uvIndex;
+        glm::vec2 uv;
+
+        uvIndex = triAt.index_uv[0];
+        uv = objModel.texs[uvIndex-1];
+        outUvs.push_back(uv[0]);
+
+        uvIndex = triAt.index_uv[1];
+        uv = objModel.texs[uvIndex-1];
+        outUvs.push_back(uv[1]);
+    }
+
     cout << "num_tris: " << objModel.num_tris << endl;
     cout << "num_xyz: " << objModel.num_xyz << endl;
     cout << "vertices: " << objModel.m_vertices.size() << endl;
@@ -86,20 +124,12 @@ void Renderer::initializeGL()
     glClearColor(0.7f, 0.7f, 1.0f, 1.0f);
 
     // links to and compiles the shaders, used for drawing simple objects
-    m_program = new QOpenGLShaderProgram(this);
-//    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "per-fragment-phong.vs.glsl");
-//    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "per-fragment-phong.fs.glsl");
+    m_program = new QOpenGLShaderProgram(this);;
     m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, "textured-phong.vs.glsl");
     m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "textured-phong.fs.glsl");
 
     m_program->link();
 
-//    m_posAttr = m_program->attributeLocation("position_attr");
-//    m_colAttr = m_program->attributeLocation("colour_attr");
-//    m_norAttr = m_program->attributeLocation("normal_attr");
-//    m_PMatrixUniform = m_program->uniformLocation("proj_matrix");
-//    m_VMatrixUniform = m_program->uniformLocation("view_matrix");
-//    m_MMatrixUniform = m_program->uniformLocation("model_matrix");
     m_posAttr = m_program->attributeLocation("position_attr");
     m_colAttr = m_program->attributeLocation("colour_attr");
     m_norAttr = m_program->attributeLocation("normal_attr");
@@ -158,7 +188,11 @@ void Renderer::paintGL()
     // so it fits in the viewing area.
 
     QMatrix4x4 view_matrix;
-    view_matrix.translate(-5.0f, -5.0f, -50.0f);
+
+    view_matrix.translate(-(objModel.max_x+objModel.min_x)/2,
+                          -(objModel.max_y+objModel.min_y)/2,
+                          -60.0f);
+
     glUniformMatrix4fv(m_VMatrixUniform, 1, false, view_matrix.data());
 
     // Not implemented: set up lighting (if necessary)
@@ -166,12 +200,7 @@ void Renderer::paintGL()
     QMatrix4x4 model_matrix;
 
     // Not implemented: scale, rotate and translate the scene
-
-//    model_matrix.translate(0.0f, 0.0f, 0.0f);
-//    glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
-
     model_matrix.rotate(m_testRotation, 0,1,0);   // has continuous rotation
-//    model_matrix.rotate(90,1,0,0);
     model_matrix.translate(-5./4., -5./4., -5./4.);
     glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
 
@@ -180,96 +209,7 @@ void Renderer::paintGL()
 
     generateExampleTriangle();
 
-    // example triangle
-    if (triVertices.size() > 0)
-    {
-//        // pass in the list of vertices and their associated colours
-//        // 3 coordinates per vertex, or per colour
-//        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &triVertices[0]);
-//        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &triColours[0]);
-//        glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &triNormals[0]);
-
-//        glEnableVertexAttribArray(m_posAttr);
-//        glEnableVertexAttribArray(m_colAttr);
-//        glEnableVertexAttribArray(m_norAttr);
-
-//        // draw triangles
-//        glDrawArrays(GL_TRIANGLES, 0, triVertices.size()/3); // 3 coordinates per vertex
-
-//        glDisableVertexAttribArray(m_norAttr);
-//        glDisableVertexAttribArray(m_colAttr);
-//        glDisableVertexAttribArray(m_posAttr);
-
-
-
-//        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_verts[0]);
-//        glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]);
-//        glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
-//        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]);
-
-//        glEnableVertexAttribArray(m_posAttr);
-//        glEnableVertexAttribArray(m_norAttr);
-//        glEnableVertexAttribArray(m_uvAttr);
-//        glEnableVertexAttribArray(m_colAttr);
-
-//        // draw triangles
-//        glDrawArrays(GL_TRIANGLES, 0, 12);
-
-//        glDisableVertexAttribArray(m_colAttr);
-//        glDisableVertexAttribArray(m_uvAttr);
-//        glDisableVertexAttribArray(m_norAttr);
-//        glDisableVertexAttribArray(m_posAttr);
-    }
-
-
-
-    // Attempt to draw model
-    vector<GLfloat> outVertices;
-    vector<GLfloat> outUvs;
-    vector<glm::vec3> normals;
-
-    for (int i=0; i<objModel.num_tris; i++)
-    {
-        tri triAt = objModel.tris[i];
-
-        GLuint vertexIndex;
-        glm::vec3 vertex;
-
-        vertexIndex = triAt.index_xyz[0];
-        vertex = objModel.m_vertices[vertexIndex-1];
-        outVertices.push_back(vertex[0]);
-        outVertices.push_back(vertex[1]);
-        outVertices.push_back(vertex[2]);
-
-        vertexIndex = triAt.index_xyz[1];
-        vertex = objModel.m_vertices[vertexIndex-1];
-        outVertices.push_back(vertex[0]);
-        outVertices.push_back(vertex[1]);
-        outVertices.push_back(vertex[2]);
-
-        vertexIndex = triAt.index_xyz[2];
-        vertex = objModel.m_vertices[vertexIndex-1];
-        outVertices.push_back(vertex[0]);
-        outVertices.push_back(vertex[1]);
-        outVertices.push_back(vertex[2]);
-
-        GLuint uvIndex;
-        glm::vec2 uv;
-
-        uvIndex = triAt.index_uv[0];
-        uv = objModel.texs[uvIndex-1];
-        outUvs.push_back(uv[0]);
-
-        uvIndex = triAt.index_uv[1];
-        uv = objModel.texs[uvIndex-1];
-        outUvs.push_back(uv[1]);
-    }
-//    GLuint elementBuffer;
-//    glGenBuffers(1, &elementBuffer);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-//    glBufferData(GL_ARRAY_BUFFER, outVertices.size() * sizeof(glm::vec3), &outVertices[0], GL_STATIC_DRAW);
-
-//    glDrawElements(GL_TRIANGLES, outVertices.size(), glm::vec3, (void*) 0);
+    // draw the model
 
     glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &outVertices[0]);  // vertices
 //    glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]); // no normals yet

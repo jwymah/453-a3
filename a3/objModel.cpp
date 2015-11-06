@@ -47,7 +47,12 @@ anim_t ObjModel::animlist[ 21 ] =
 
 // default constructor
 ObjModel::ObjModel () {
-
+    max_x = -999;
+    min_x = 999;
+    max_y = -999;
+    min_y = 999;
+    max_z = -999;
+    min_z = 999;
 }
 
 // file-loading constructor
@@ -90,6 +95,30 @@ bool ObjModel::LoadModel(const char *filename) {
             fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
             m_vertices.push_back(vertex);
             num_xyz++;
+            if (vertex.x > max_x)
+            {
+                max_x = vertex.x;
+            }
+            if (vertex.y > max_y)
+            {
+                max_y = vertex.y;
+            }
+            if (vertex.z > max_z)
+            {
+                max_z = vertex.z;
+            }
+            if (vertex.x < min_x)
+            {
+                min_x = vertex.x;
+            }
+            if (vertex.y < min_y)
+            {
+                min_y = vertex.y;
+            }
+            if (vertex.z < min_z)
+            {
+                min_z = vertex.z;
+            }
 
         }else if ( strcmp( lineHeader, "vt" ) == 0 ){
             // u, v: texture coordinates

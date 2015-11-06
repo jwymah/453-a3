@@ -94,6 +94,14 @@ class ObjModel {
         vector<vec2> texs;  // texture coordinates
         vector<tri> tris;   // triangles
 
+        // x y z limits
+        float min_x;
+        float max_x;
+        float min_y;
+        float max_y;
+        float min_z;
+        float max_z;
+
         static anim_t animlist[21]; // static array, listing the animations in the provided models
 
 };
