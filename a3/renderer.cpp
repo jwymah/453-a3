@@ -2,6 +2,9 @@
 #include <QTextStream>
 #include <QOpenGLBuffer>
 #include <cmath>
+#include<iostream>
+
+using namespace std;
 
 const float tet_verts[] = {
     1,1,1, 1,2,1, 2,1,1,
@@ -46,6 +49,12 @@ Renderer::Renderer(QWidget *parent)
     m_rotationTimer = new QTimer(this);
     connect(m_rotationTimer, SIGNAL(timeout()), this, SLOT(rotate_n_update()));
     m_rotationTimer->start(33);
+
+    if (objModel.LoadModel("tris.obj"))
+    {
+        cout << "successfullly loaded" << endl;
+    }
+    cout << "hello" << endl;
 }
 // and add
 void Renderer::rotate_n_update()
@@ -65,6 +74,8 @@ void Renderer::initializeGL()
     // Qt support for inline GL function calls
 	initializeOpenGLFunctions();
 
+    glEnable(GL_DEPTH_TEST);
+
     // sets the background clour
     glClearColor(0.7f, 0.7f, 1.0f, 1.0f);
 
@@ -76,6 +87,7 @@ void Renderer::initializeGL()
     m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, "textured-phong.fs.glsl");
 
     m_program->link();
+
 //    m_posAttr = m_program->attributeLocation("position_attr");
 //    m_colAttr = m_program->attributeLocation("colour_attr");
 //    m_norAttr = m_program->attributeLocation("normal_attr");
@@ -99,7 +111,7 @@ void Renderer::initializeGL()
     glBindTexture(GL_TEXTURE_2D, m_testTexture); // bind the texture handle
 
     QImage image; // Load the image
-    image.load("test.png");
+    image.load("texture.png");
     image = image.convertToFormat(QImage::Format_RGBA8888); // Convert it to a usable format
 
     // Write it to the GPU
@@ -140,7 +152,7 @@ void Renderer::paintGL()
     // so it fits in the viewing area.
 
     QMatrix4x4 view_matrix;
-    view_matrix.translate(0.0f, 0.0f, -5.0f);
+    view_matrix.translate(-5.0f, -5.0f, -30.0f);
     glUniformMatrix4fv(m_VMatrixUniform, 1, false, view_matrix.data());
 
     // Not implemented: set up lighting (if necessary)
@@ -152,7 +164,8 @@ void Renderer::paintGL()
 //    model_matrix.translate(0.0f, 0.0f, 0.0f);
 //    glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
 
-    model_matrix.rotate(m_testRotation, 0,1,0);
+//    model_matrix.rotate(m_testRotation, 0,1,0);   // has continuous rotation
+    model_matrix.rotate(90,1,0,0);
     model_matrix.translate(-5./4., -5./4., -5./4.);
     glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
 
@@ -180,6 +193,8 @@ void Renderer::paintGL()
 //        glDisableVertexAttribArray(m_norAttr);
 //        glDisableVertexAttribArray(m_colAttr);
 //        glDisableVertexAttribArray(m_posAttr);
+
+
         glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_verts[0]);
         glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]);
         glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
@@ -191,13 +206,51 @@ void Renderer::paintGL()
         glEnableVertexAttribArray(m_colAttr);
 
         // draw triangles
-        glDrawArrays(GL_TRIANGLES, 0, 12);
+//        glDrawArrays(GL_TRIANGLES, 0, 12);
 
         glDisableVertexAttribArray(m_colAttr);
         glDisableVertexAttribArray(m_uvAttr);
         glDisableVertexAttribArray(m_norAttr);
         glDisableVertexAttribArray(m_posAttr);
     }
+
+    glBegin(GL_QUADS);                      // Draw A Quad
+
+    for (float i=0; i<6; i++)
+    {
+        for (float j=0; j<6; j++)
+        {
+            glVertex3f( 2*i, 2*j+1, 0.0f);              // Top Left
+            glVertex3f( 2*i+1, 2*j+1, 0.0f);              // Top Right
+            glVertex3f( 2*i+1,2*j, 0.0f);              // Bottom Right
+            glVertex3f( 2*i,2*j, 0.0f);              // Bottom Left
+
+            glVertex3f( 2*i+1, 2*j+2, 0.0f);              // Top Left
+            glVertex3f( 2*i+2, 2*j+2, 0.0f);              // Top Right
+            glVertex3f( 2*i+2,2*j+1, 0.0f);              // Bottom Right
+            glVertex3f( 2*i+1,2*j+1, 0.0f);              // Bottom Left
+        }
+    }
+    glEnd();                            // Done Drawing The Quad
+
+    // Attempt to draw model
+    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &objModel.m_vertices);  // vertices
+//    glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]); // no normals yet
+    glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
+    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]); // colors
+
+    glEnableVertexAttribArray(m_posAttr);
+    glEnableVertexAttribArray(m_norAttr);
+    glEnableVertexAttribArray(m_uvAttr);
+    glEnableVertexAttribArray(m_colAttr);
+
+    // draw triangles
+    glDrawArrays(GL_TRIANGLES, 0, objModel.m_vertices.size()/3);
+
+    glDisableVertexAttribArray(m_colAttr);
+    glDisableVertexAttribArray(m_uvAttr);
+    glDisableVertexAttribArray(m_norAttr);
+    glDisableVertexAttribArray(m_posAttr);
 
     // deactivate the program
     m_program->release();
@@ -254,6 +307,14 @@ void Renderer::generateExampleTriangle()
         triNormals.insert(triNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
     }
 
+}
+
+void Renderer::generateBoard()
+{
+    boardVertices.clear();
+    boardColours.clear();
+
+//    float vectList [] =
 }
 
 // override mouse press event

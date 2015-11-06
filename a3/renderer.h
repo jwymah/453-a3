@@ -8,6 +8,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include "objModel.h"
 #include <QWidget>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
@@ -79,11 +80,23 @@ private:
     vector<GLfloat> triColours;
     vector<GLfloat> triNormals;
 
+    // board
+    vector<GLfloat> boardVertices;
+    vector<GLfloat> boardColours;
+    vector<GLfloat> boardNormals;
+
+    // object model
+    ObjModel objModel;
+
     // helper function for loading shaders
     GLuint loadShader(GLenum type, const char *source);
 
     // helper function for drawing bordering triangles
     void generateExampleTriangle();
+
+    // draw board
+    void generateBoard();
+
 private slots:
     void rotate_n_update();
 
