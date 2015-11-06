@@ -54,7 +54,13 @@ Renderer::Renderer(QWidget *parent)
     {
         cout << "successfullly loaded" << endl;
     }
-    cout << "hello" << endl;
+
+    cout << "num_tris: " << objModel.num_tris << endl;
+    cout << "num_xyz: " << objModel.num_xyz << endl;
+    cout << "vertices: " << objModel.m_vertices.size() << endl;
+    cout << "texture coordinates size: " << objModel.texs.size() << endl;
+    cout << "glm::vec2 size= " << sizeof(glm::vec2) << endl;
+    cout << "glm::vec3 size= " << sizeof(glm::vec3) << endl;
 }
 // and add
 void Renderer::rotate_n_update()
@@ -152,7 +158,7 @@ void Renderer::paintGL()
     // so it fits in the viewing area.
 
     QMatrix4x4 view_matrix;
-    view_matrix.translate(-5.0f, -5.0f, -30.0f);
+    view_matrix.translate(-5.0f, -5.0f, -50.0f);
     glUniformMatrix4fv(m_VMatrixUniform, 1, false, view_matrix.data());
 
     // Not implemented: set up lighting (if necessary)
@@ -164,8 +170,8 @@ void Renderer::paintGL()
 //    model_matrix.translate(0.0f, 0.0f, 0.0f);
 //    glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
 
-//    model_matrix.rotate(m_testRotation, 0,1,0);   // has continuous rotation
-    model_matrix.rotate(90,1,0,0);
+    model_matrix.rotate(m_testRotation, 0,1,0);   // has continuous rotation
+//    model_matrix.rotate(90,1,0,0);
     model_matrix.translate(-5./4., -5./4., -5./4.);
     glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
 
@@ -195,61 +201,92 @@ void Renderer::paintGL()
 //        glDisableVertexAttribArray(m_posAttr);
 
 
-        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_verts[0]);
-        glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]);
-        glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
-        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]);
 
-        glEnableVertexAttribArray(m_posAttr);
-        glEnableVertexAttribArray(m_norAttr);
-        glEnableVertexAttribArray(m_uvAttr);
-        glEnableVertexAttribArray(m_colAttr);
+//        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_verts[0]);
+//        glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]);
+//        glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
+//        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]);
 
-        // draw triangles
+//        glEnableVertexAttribArray(m_posAttr);
+//        glEnableVertexAttribArray(m_norAttr);
+//        glEnableVertexAttribArray(m_uvAttr);
+//        glEnableVertexAttribArray(m_colAttr);
+
+//        // draw triangles
 //        glDrawArrays(GL_TRIANGLES, 0, 12);
 
-        glDisableVertexAttribArray(m_colAttr);
-        glDisableVertexAttribArray(m_uvAttr);
-        glDisableVertexAttribArray(m_norAttr);
-        glDisableVertexAttribArray(m_posAttr);
+//        glDisableVertexAttribArray(m_colAttr);
+//        glDisableVertexAttribArray(m_uvAttr);
+//        glDisableVertexAttribArray(m_norAttr);
+//        glDisableVertexAttribArray(m_posAttr);
     }
 
-    glBegin(GL_QUADS);                      // Draw A Quad
 
-    for (float i=0; i<6; i++)
-    {
-        for (float j=0; j<6; j++)
-        {
-            glVertex3f( 2*i, 2*j+1, 0.0f);              // Top Left
-            glVertex3f( 2*i+1, 2*j+1, 0.0f);              // Top Right
-            glVertex3f( 2*i+1,2*j, 0.0f);              // Bottom Right
-            glVertex3f( 2*i,2*j, 0.0f);              // Bottom Left
-
-            glVertex3f( 2*i+1, 2*j+2, 0.0f);              // Top Left
-            glVertex3f( 2*i+2, 2*j+2, 0.0f);              // Top Right
-            glVertex3f( 2*i+2,2*j+1, 0.0f);              // Bottom Right
-            glVertex3f( 2*i+1,2*j+1, 0.0f);              // Bottom Left
-        }
-    }
-    glEnd();                            // Done Drawing The Quad
 
     // Attempt to draw model
-    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &objModel.m_vertices);  // vertices
+    vector<GLfloat> outVertices;
+    vector<GLfloat> outUvs;
+    vector<glm::vec3> normals;
+
+    for (int i=0; i<objModel.num_tris; i++)
+    {
+        tri triAt = objModel.tris[i];
+
+        GLuint vertexIndex;
+        glm::vec3 vertex;
+
+        vertexIndex = triAt.index_xyz[0];
+        vertex = objModel.m_vertices[vertexIndex-1];
+        outVertices.push_back(vertex[0]);
+        outVertices.push_back(vertex[1]);
+        outVertices.push_back(vertex[2]);
+
+        vertexIndex = triAt.index_xyz[1];
+        vertex = objModel.m_vertices[vertexIndex-1];
+        outVertices.push_back(vertex[0]);
+        outVertices.push_back(vertex[1]);
+        outVertices.push_back(vertex[2]);
+
+        vertexIndex = triAt.index_xyz[2];
+        vertex = objModel.m_vertices[vertexIndex-1];
+        outVertices.push_back(vertex[0]);
+        outVertices.push_back(vertex[1]);
+        outVertices.push_back(vertex[2]);
+
+        GLuint uvIndex;
+        glm::vec2 uv;
+
+        uvIndex = triAt.index_uv[0];
+        uv = objModel.texs[uvIndex-1];
+        outUvs.push_back(uv[0]);
+
+        uvIndex = triAt.index_uv[1];
+        uv = objModel.texs[uvIndex-1];
+        outUvs.push_back(uv[1]);
+    }
+//    GLuint elementBuffer;
+//    glGenBuffers(1, &elementBuffer);
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+//    glBufferData(GL_ARRAY_BUFFER, outVertices.size() * sizeof(glm::vec3), &outVertices[0], GL_STATIC_DRAW);
+
+//    glDrawElements(GL_TRIANGLES, outVertices.size(), glm::vec3, (void*) 0);
+
+    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &outVertices[0]);  // vertices
 //    glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]); // no normals yet
-    glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
-    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]); // colors
+    glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &outUvs[0]); // textures, we have these
+//    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]); // colors
 
     glEnableVertexAttribArray(m_posAttr);
-    glEnableVertexAttribArray(m_norAttr);
+//    glEnableVertexAttribArray(m_norAttr);
     glEnableVertexAttribArray(m_uvAttr);
-    glEnableVertexAttribArray(m_colAttr);
+//    glEnableVertexAttribArray(m_colAttr);
 
     // draw triangles
-    glDrawArrays(GL_TRIANGLES, 0, objModel.m_vertices.size()/3);
+    glDrawArrays(GL_TRIANGLES, 0, outVertices.size()/3);
 
-    glDisableVertexAttribArray(m_colAttr);
+//    glDisableVertexAttribArray(m_colAttr);
     glDisableVertexAttribArray(m_uvAttr);
-    glDisableVertexAttribArray(m_norAttr);
+//    glDisableVertexAttribArray(m_norAttr);
     glDisableVertexAttribArray(m_posAttr);
 
     // deactivate the program
