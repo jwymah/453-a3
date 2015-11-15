@@ -86,16 +86,24 @@ Renderer::Renderer(QWidget *parent)
         uvIndex = triAt.index_uv[0];
         uv = objModel.texs[uvIndex-1];
         outUvs.push_back(uv[0]);
+        outUvs.push_back(uv[1]);
 
         uvIndex = triAt.index_uv[1];
         uv = objModel.texs[uvIndex-1];
+        outUvs.push_back(uv[0]);
+        outUvs.push_back(uv[1]);
+
+        uvIndex = triAt.index_uv[2];
+        uv = objModel.texs[uvIndex-1];
+        outUvs.push_back(uv[0]);
         outUvs.push_back(uv[1]);
 
         // shader supports per-vertex colour; add colour for each vertex
+        // TODO: change this to normal calculations?
         float colourList [] = {
-            1.0f, 0.0f, 0.0f, // red
-            0.0f, 1.0f, 0.0f, // green
-            0.0f, 0.0f, 1.0f // blue
+            1.0f, 1.0f, 1.0f, // red
+            1.0f, 1.0f, 1.0f, // green
+            1.0f, 1.0f, 1.0f // blue
         };
         outColours.insert(outColours.end(), colourList, colourList + 3*1*3); // 9 items in array
 
@@ -169,10 +177,9 @@ void Renderer::initializeGL()
     glGenTextures(1, &m_testTexture); // Generate a texture handle
     glActiveTexture(GL_TEXTURE0); // Make sure we're using texture unit 0
     glBindTexture(GL_TEXTURE_2D, m_testTexture); // bind the texture handle
-    glUniform1i(m_TextureUniform, 0); // Give it the 0'th texture unit
 
     QImage image; // Load the image
-    image.load("texture.png");
+    image.load("astro.png");
     image = image.convertToFormat(QImage::Format_RGBA8888); // Convert it to a usable format
 
     // Write it to the GPU
@@ -189,7 +196,7 @@ void Renderer::initializeGL()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    generateExampleTriangle();
+//    generateExampleTriangle();
 }
 
 // called by the Qt GUI system, to allow OpenGL drawing commands
@@ -245,7 +252,6 @@ void Renderer::paintGL()
     glDisableVertexAttribArray(m_posAttr);
 
 
-    //demo triangel
     glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_verts[0]);
     glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]);
     glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
