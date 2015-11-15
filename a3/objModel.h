@@ -82,7 +82,7 @@ class ObjModel {
         // TODO: You may want to create and call the following methods during OBJ
         // loading, etc. You'll need to add the necessary member variables as well...
         //void calculateVertexNormals ();
-        //void calculateFaceNormals ();
+        void calculateNormals ();
         //void draw (GLuint vertexLocation, GLuint normalLocation);
 
         // member variables
@@ -96,8 +96,8 @@ class ObjModel {
         vector<vec3> m_vertices; // vertex array
         vector<vec2> texs;  // texture coordinates
         vector<tri> tris;   // triangles
-
-        vector<vec3> normals;
+        vector<vec3> faceNormals;
+        vector<vec3> vertexNormals;
 
         // x y z limits
         float min_x;

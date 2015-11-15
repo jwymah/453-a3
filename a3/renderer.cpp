@@ -55,51 +55,52 @@ Renderer::Renderer(QWidget *parent)
         cout << "successfullly loaded" << endl;
     }
 
+    objModel.calculateNormals();
+
     for (int i=0; i<objModel.num_tris; i++)
     {
         tri triAt = objModel.tris[i];
 
-        GLuint vertexIndex;
-        glm::vec3 vertex;
+        GLuint indexA, indexB, indexC;
+        glm::vec3 a, b, c;
 
-        vertexIndex = triAt.index_xyz[0];
-        vertex = objModel.m_vertices[vertexIndex-1];
-        outVertices.push_back(vertex[0]);
-        outVertices.push_back(vertex[1]);
-        outVertices.push_back(vertex[2]);
+        indexA = triAt.index_xyz[0];
+        a = objModel.m_vertices[indexA-1];
+        outVertices.push_back(a.x);
+        outVertices.push_back(a.y);
+        outVertices.push_back(a.z);
 
-        vertexIndex = triAt.index_xyz[1];
-        vertex = objModel.m_vertices[vertexIndex-1];
-        outVertices.push_back(vertex[0]);
-        outVertices.push_back(vertex[1]);
-        outVertices.push_back(vertex[2]);
+        indexB = triAt.index_xyz[1];
+        b = objModel.m_vertices[indexB-1];
+        outVertices.push_back(b.x);
+        outVertices.push_back(b.y);
+        outVertices.push_back(b.z);
 
-        vertexIndex = triAt.index_xyz[2];
-        vertex = objModel.m_vertices[vertexIndex-1];
-        outVertices.push_back(vertex[0]);
-        outVertices.push_back(vertex[1]);
-        outVertices.push_back(vertex[2]);
+        indexC = triAt.index_xyz[2];
+        c = objModel.m_vertices[indexC-1];
+        outVertices.push_back(c.x);
+        outVertices.push_back(c.y);
+        outVertices.push_back(c.z);
 
         GLuint uvIndex;
         glm::vec2 uv;
 
         uvIndex = triAt.index_uv[0];
         uv = objModel.texs[uvIndex-1];
-        outUvs.push_back(uv[0]);
-        outUvs.push_back(uv[1]);
+        outUvs.push_back(uv.x);
+        outUvs.push_back(uv.y);
 
         uvIndex = triAt.index_uv[1];
         uv = objModel.texs[uvIndex-1];
-        outUvs.push_back(uv[0]);
-        outUvs.push_back(uv[1]);
+        outUvs.push_back(uv.x);
+        outUvs.push_back(uv.y);
 
         uvIndex = triAt.index_uv[2];
         uv = objModel.texs[uvIndex-1];
-        outUvs.push_back(uv[0]);
-        outUvs.push_back(uv[1]);
+        outUvs.push_back(uv.x);
+        outUvs.push_back(uv.y);
 
         // shader supports per-vertex colour; add colour for each vertex
-        // TODO: change this to normal calculations?
         float colourList [] = {
             1.0f, 1.0f, 1.0f, // red
             1.0f, 1.0f, 1.0f, // green
@@ -108,10 +109,22 @@ Renderer::Renderer(QWidget *parent)
         outColours.insert(outColours.end(), colourList, colourList + 3*1*3); // 9 items in array
 
         // shader supports per-vertex normals; add normal for each vertex - use same normal for each vertex (eg. face normal)
-        float normalList [] = { 0.0f, 0.0f, 1.0f }; // facing viewer
-        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
-        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
-        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
+        // TODO: change this to normal calculations?
+        vec3 normalA = objModel.vertexNormals[indexA];
+        float normalListA [] = {normalA.x, normalA.y, normalA.z};
+        outNormals.insert(outNormals.end(), normalListA, normalListA + 3); // 3 coordinates per vertex
+
+        vec3 normalB = objModel.vertexNormals[indexB];
+        float normalListB [] = {normalB.x, normalB.y, normalB.z};
+        outNormals.insert(outNormals.end(), normalListB, normalListB + 3); // 3 coordinates per vertex
+
+        vec3 normalC = objModel.vertexNormals[indexC];
+        float normalListC [] = {normalC.x, normalC.y, normalC.z};
+        outNormals.insert(outNormals.end(), normalListC, normalListC + 3); // 3 coordinates per vertex
+//        float normalList [] = { 0.0f, 0.0f, 1.0f }; // facing viewer
+//        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
+//        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
+//        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
     }
 
     mouse_x = 0;
@@ -131,6 +144,9 @@ Renderer::Renderer(QWidget *parent)
     cout << "texture coordinates size: " << objModel.texs.size() << endl;
     cout << "glm::vec2 size= " << sizeof(glm::vec2) << endl;
     cout << "glm::vec3 size= " << sizeof(glm::vec3) << endl;
+
+    cout << "vertex normals size: " << objModel.vertexNormals.size() << endl;
+    cout << "face normals: " << objModel.faceNormals.size() << endl;
 }
 // and add
 void Renderer::rotate_n_update()

@@ -175,3 +175,91 @@ bool ObjModel::LoadModel(const char *filename) {
     return true;
 
 }
+
+void ObjModel::calculateNormals()
+{
+    // calculate face normal for every triangle
+    for (int i=0; i<num_tris; i++)
+    {
+        tri triAt = tris[i];
+
+        GLuint vertexIndex;
+        glm::vec3 a, b, c;
+
+        vertexIndex = triAt.index_xyz[0];
+        a = m_vertices[vertexIndex-1];
+        vertexIndex = triAt.index_xyz[1];
+        b = m_vertices[vertexIndex-1];
+        vertexIndex = triAt.index_xyz[2];
+        c = m_vertices[vertexIndex-1];
+
+        // vecA = b - c
+        // VecB = a - c
+        vec3 vecA;
+        vecA.x= b.x - c.x;
+        vecA.y= b.y - c.y;
+        vecA.z= b.z - c.z;
+
+        vec3 vecB;
+        vecB.x= a.x - c.x;
+        vecB.y= a.y - c.y;
+        vecB.z= a.z - c.z;
+
+        // normals = B x A
+        vec3 normal;
+        normal.x = (vecB.y * vecA.z) - (vecB.z * vecA.y);
+        normal.y = (vecB.z * vecA.x) - (vecB.x * vecA.z);
+        normal.z = (vecB.x * vecA.y) - (vecB.y * vecA.x);
+
+        // don't normalize it here..... just ignore it? what
+//        float sum = normal.x + normal.y + normal.z;
+//        normal.x = normal.x / sum;
+//        normal.y = normal.x / sum;
+//        normal.z = normal.x / sum;
+
+        faceNormals.push_back(normal);
+    }
+
+    for (int i=0; i<m_vertices.size(); i++)
+    {
+        vec3 sum;
+        GLuint shared = 0;
+
+        for (int j=0; j<num_tris; j++)
+        {
+            if (i == tris[j].index_xyz[0] || i == tris[j].index_xyz[1] || i == tris[j].index_xyz[2])
+            {
+                shared++;
+                sum.x += faceNormals[j].x;
+                sum.y += faceNormals[j].y;
+                sum.z += faceNormals[j].z;
+            }
+        }
+
+        vec3 normal;
+        normal.x = sum.x / shared;
+        normal.y = sum.y / shared;
+        normal.z = sum.z / shared;
+
+        vertexNormals.push_back(normal);
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
