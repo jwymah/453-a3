@@ -33,6 +33,9 @@ public:
     // destructor
     virtual ~Renderer();
 
+    void setShiftStatus(bool status);
+    void setCtrlStatus(bool status);
+
 protected:
 
     // override fundamental drawing functions
@@ -89,7 +92,23 @@ private:
     ObjModel objModel;
     vector<GLfloat> outVertices;
     vector<GLfloat> outUvs;
-    vector<GLfloat> normals;
+    vector<GLfloat> outColours;
+    vector<GLfloat> outNormals;
+
+    //
+    int mouse_x;
+    int mouse_y;
+    int magnitude_x;
+    int magnitude_y;
+
+    bool mouse_left;
+    bool mouse_middle;
+    bool mouse_right;
+    bool key_shift;
+    bool key_ctrl;
+    //
+    QMatrix4x4 view_matrix_translation;
+    QMatrix4x4 view_matrix_rotation;
 
     // helper function for loading shaders
     GLuint loadShader(GLenum type, const char *source);

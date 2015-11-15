@@ -55,7 +55,6 @@ Renderer::Renderer(QWidget *parent)
         cout << "successfullly loaded" << endl;
     }
 
-    // Attempt to draw model
     for (int i=0; i<objModel.num_tris; i++)
     {
         tri triAt = objModel.tris[i];
@@ -91,7 +90,32 @@ Renderer::Renderer(QWidget *parent)
         uvIndex = triAt.index_uv[1];
         uv = objModel.texs[uvIndex-1];
         outUvs.push_back(uv[1]);
+
+        // shader supports per-vertex colour; add colour for each vertex
+        float colourList [] = {
+            1.0f, 0.0f, 0.0f, // red
+            0.0f, 1.0f, 0.0f, // green
+            0.0f, 0.0f, 1.0f // blue
+        };
+        outColours.insert(outColours.end(), colourList, colourList + 3*1*3); // 9 items in array
+
+        // shader supports per-vertex normals; add normal for each vertex - use same normal for each vertex (eg. face normal)
+        float normalList [] = { 0.0f, 0.0f, 1.0f }; // facing viewer
+        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
+        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
+        outNormals.insert(outNormals.end(), normalList, normalList + 3); // 3 coordinates per vertex
     }
+
+    mouse_x = 0;
+    mouse_left = false;
+    mouse_middle = false;
+    mouse_right = false;
+    key_shift = false;
+    key_ctrl = false;
+
+    view_matrix_translation.translate(-(objModel.max_x+objModel.min_x)/2,
+                          -(objModel.max_y+objModel.min_y)/2,
+                          -80.0f);
 
     cout << "num_tris: " << objModel.num_tris << endl;
     cout << "num_xyz: " << objModel.num_xyz << endl;
@@ -145,6 +169,7 @@ void Renderer::initializeGL()
     glGenTextures(1, &m_testTexture); // Generate a texture handle
     glActiveTexture(GL_TEXTURE0); // Make sure we're using texture unit 0
     glBindTexture(GL_TEXTURE_2D, m_testTexture); // bind the texture handle
+    glUniform1i(m_TextureUniform, 0); // Give it the 0'th texture unit
 
     QImage image; // Load the image
     image.load("texture.png");
@@ -164,6 +189,7 @@ void Renderer::initializeGL()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+    generateExampleTriangle();
 }
 
 // called by the Qt GUI system, to allow OpenGL drawing commands
@@ -187,46 +213,55 @@ void Renderer::paintGL()
     // origin, and we need to back up to see it or scale vertices
     // so it fits in the viewing area.
 
-    QMatrix4x4 view_matrix;
+//    glUniformMatrix4fv(m_VMatrixUniform, 1, false, view_matrix.data());
 
-    view_matrix.translate(-(objModel.max_x+objModel.min_x)/2,
-                          -(objModel.max_y+objModel.min_y)/2,
-                          -60.0f);
+    QMatrix4x4 model_matrix = objModel.getTransformMatrix();
 
-    glUniformMatrix4fv(m_VMatrixUniform, 1, false, view_matrix.data());
+    model_matrix.rotate(m_testRotation, 0,1,0);
 
-    // Not implemented: set up lighting (if necessary)
-
-    QMatrix4x4 model_matrix;
-
-    // Not implemented: scale, rotate and translate the scene
-    model_matrix.rotate(m_testRotation, 0,1,0);   // has continuous rotation
-    model_matrix.translate(-5./4., -5./4., -5./4.);
     glUniformMatrix4fv(m_MMatrixUniform, 1, false, model_matrix.data());
 
-    // Not implemented: actually draw our character
-    // Here's some test code that draws a simple triangle at the center
 
-    generateExampleTriangle();
+    QMatrix4x4 vm = view_matrix_translation * view_matrix_rotation;
+    glUniformMatrix4fv(m_VMatrixUniform, 1, false, vm.data());
 
     // draw the model
-
     glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &outVertices[0]);  // vertices
-//    glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]); // no normals yet
+    glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &outNormals[0]); // no normals yet
     glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &outUvs[0]); // textures, we have these
-//    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]); // colors
+    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &outColours[0]); // colors
 
     glEnableVertexAttribArray(m_posAttr);
-//    glEnableVertexAttribArray(m_norAttr);
+    glEnableVertexAttribArray(m_norAttr);
     glEnableVertexAttribArray(m_uvAttr);
-//    glEnableVertexAttribArray(m_colAttr);
+    glEnableVertexAttribArray(m_colAttr);
 
     // draw triangles
     glDrawArrays(GL_TRIANGLES, 0, outVertices.size()/3);
 
-//    glDisableVertexAttribArray(m_colAttr);
+    glDisableVertexAttribArray(m_colAttr);
     glDisableVertexAttribArray(m_uvAttr);
-//    glDisableVertexAttribArray(m_norAttr);
+    glDisableVertexAttribArray(m_norAttr);
+    glDisableVertexAttribArray(m_posAttr);
+
+
+    //demo triangel
+    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_verts[0]);
+    glVertexAttribPointer(m_norAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_normals[0]);
+    glVertexAttribPointer(m_uvAttr, 2, GL_FLOAT, GL_FALSE, 0, &tet_uvs[0]);
+    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &tet_col[0]);
+
+    glEnableVertexAttribArray(m_posAttr);
+    glEnableVertexAttribArray(m_norAttr);
+    glEnableVertexAttribArray(m_uvAttr);
+    glEnableVertexAttribArray(m_colAttr);
+
+    // draw triangles
+    glDrawArrays(GL_TRIANGLES, 0, 12);
+
+    glDisableVertexAttribArray(m_colAttr);
+    glDisableVertexAttribArray(m_uvAttr);
+    glDisableVertexAttribArray(m_norAttr);
     glDisableVertexAttribArray(m_posAttr);
 
     // deactivate the program
@@ -299,6 +334,19 @@ void Renderer::mousePressEvent(QMouseEvent * event)
 {
     QTextStream cout(stdout);
     cout << "Stub: Button " << event->button() << " pressed.\n";
+    if (event->button() == 1)
+    {
+        mouse_left = true;
+    }
+    if (event->button() == 4)
+    {
+        mouse_middle = true;
+    }
+    if (event->button() == 2)
+    {
+        mouse_right = true;
+    }
+    mouse_x = 0;
 }
 
 // override mouse release event
@@ -306,6 +354,18 @@ void Renderer::mouseReleaseEvent(QMouseEvent * event)
 {
     QTextStream cout(stdout);
     cout << "Stub: Button " << event->button() << " pressed.\n";
+    if (event->button() == 1)
+    {
+        mouse_left = false;
+    }
+    else if (event->button() == 4)
+    {
+        mouse_middle = false;
+    }
+    else if (event->button() == 2)
+    {
+        mouse_right = false;
+    }
 }
 
 // override mouse move event
@@ -313,4 +373,73 @@ void Renderer::mouseMoveEvent(QMouseEvent * event)
 {
     QTextStream cout(stdout);
     cout << "Stub: Motion at " << event->x() << ", " << event->y() << ".\n";
+
+    if (mouse_x == 0 || mouse_y == 0)
+    {
+        mouse_x = event->x();
+        mouse_y = event->y();
+        return;
+    }
+    magnitude_x =  (event->x() - mouse_x); //TODO: could make these vary by screensize..
+    magnitude_y =  (event->y() - mouse_y);
+    cout << magnitude_x << "," << magnitude_y << endl;
+
+    if (!key_shift && !key_ctrl)
+    {
+        if (mouse_left)
+        {
+            objModel.translation_x += magnitude_x;
+            objModel.translation_y -= magnitude_y;
+        }
+        if (mouse_middle)
+        {
+            objModel.translation_z += magnitude_x;
+        }
+        if (mouse_right)
+        {
+            // TODO: trackball rotation
+        }
+    }
+
+    if (key_shift)
+    {
+        if (mouse_left)
+        {
+            view_matrix_translation.translate(magnitude_x, -magnitude_y, 0);
+        }
+        if (mouse_middle)
+        {
+            view_matrix_translation.translate(0, 0, magnitude_x);
+        }
+        if (mouse_right)
+        {
+            // TODO: rotate up direction of camera..
+            // is this just rotating the view matrix?
+            view_matrix_rotation.rotate(magnitude_x, 0, 0, 1);
+        }
+    }
+
+    if (key_ctrl)
+    {
+        if (mouse_left)
+        {
+        }
+        if (mouse_middle)
+        {
+        }
+    }
+
+    mouse_x = event->x();
+    mouse_y = event->y();
+    update();
+}
+
+void Renderer::setShiftStatus(bool status)
+{
+    key_shift = status;
+}
+
+void Renderer::setCtrlStatus(bool status)
+{
+    key_ctrl = status;
 }

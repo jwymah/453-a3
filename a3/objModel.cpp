@@ -53,11 +53,29 @@ ObjModel::ObjModel () {
     min_y = 999;
     max_z = -999;
     min_z = 999;
+
+    rotation_x = 0;
+    rotation_y = 0;
+    rotation_z = 90;
+
+    translation_x = 0;
+    translation_y = 0;
+    translation_z = 0;
 }
 
 // file-loading constructor
 ObjModel::ObjModel (const char *filename) {
     LoadModel(filename);
+}
+
+QMatrix4x4 ObjModel::getTransformMatrix()
+{
+    QMatrix4x4 matrix;
+//    matrix.rotate(rotation_x, 1,0,0);
+//    matrix.rotate(rotation_y, 0,1,0);
+//    matrix.rotate(rotation_z, 0,0,1);
+    matrix.translate(translation_x, translation_y, translation_z);
+    return matrix;
 }
 
 // loads the model, populating the data
@@ -86,7 +104,10 @@ bool ObjModel::LoadModel(const char *filename) {
         // read the first word of the line
         int res = fscanf(file, "%s", lineHeader);
         if (res == EOF)
+        {
+//            tris
             break; // EOF = End Of File. Quit the loop.
+        }
 
         // parse lineHeader
         if ( strcmp( lineHeader, "v" ) == 0 ){

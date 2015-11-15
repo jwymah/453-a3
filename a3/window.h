@@ -28,6 +28,9 @@ public:
     // constructor
     Window(QWidget *parent = 0);
 
+    virtual void keyPressEvent(QKeyEvent *event);
+    virtual void keyReleaseEvent(QKeyEvent *event);
+
     // destructor
     ~Window();
 

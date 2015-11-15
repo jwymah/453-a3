@@ -13,6 +13,8 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <vector>
+#include <cmath>
+#include <QMatrix4x4>
 
 using namespace std;
 using namespace glm;
@@ -75,6 +77,7 @@ class ObjModel {
         // TODO: You may want to update the LoadModel function to scale the model
         // to within a visible range
         bool LoadModel(const char *filename);
+        QMatrix4x4 getTransformMatrix();
 
         // TODO: You may want to create and call the following methods during OBJ
         // loading, etc. You'll need to add the necessary member variables as well...
@@ -94,6 +97,8 @@ class ObjModel {
         vector<vec2> texs;  // texture coordinates
         vector<tri> tris;   // triangles
 
+        vector<vec3> normals;
+
         // x y z limits
         float min_x;
         float max_x;
@@ -101,6 +106,16 @@ class ObjModel {
         float max_y;
         float min_z;
         float max_z;
+
+        //
+        float rotation_x;
+        float rotation_y;
+        float rotation_z;
+
+        //
+        float translation_x;
+        float translation_y;
+        float translation_z;
 
         static anim_t animlist[21]; // static array, listing the animations in the provided models
 
